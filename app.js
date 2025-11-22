@@ -1,6 +1,6 @@
 // ACC LifeOS v0.1 — Local-first PWA
 const LS_KEY = "acc_lifeos_v01";
-
+ 
 const state = loadState() ?? {
   lifeGroups: [
     { id: uid(), title: "Orbiq", color: "good", tasks: [] },
