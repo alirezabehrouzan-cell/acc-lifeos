@@ -3,7 +3,7 @@
   "short_name": "ACC-OS",
   "description": "Your personalized life operating system built by Al.",
   "start_url": "/index.html",
-  "scope": "/",
+  "scope": "/", 
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0A84FF",
