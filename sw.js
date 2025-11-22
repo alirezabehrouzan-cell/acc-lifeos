@@ -5,7 +5,7 @@ const ASSETS = [
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png"
-];
+]; 
 
 // نصب Service Worker و کش کردن فایل‌ها
 self.addEventListener("install", (event) => {
