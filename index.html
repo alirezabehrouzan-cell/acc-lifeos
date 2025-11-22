@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ACC LifeOS</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f1a" />
+
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">⚡</div>
+        <div>
+          <h1>ACC LifeOS</h1>
+          <p class="subtitle">مدیر زندگی + مغز دوم</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="btn-export" class="ghost">Export</button>
+        <button id="btn-settings" class="ghost">⚙️</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="life">🧭 مدیر زندگی</button>
+      <button class="tab" data-tab="brain">🧠 مغز دوم</button>
+    </nav>
+
+    <main class="content">
+      <!-- LIFE MANAGER -->
+      <section id="tab-life" class="panel active">
+        <div class="panel-head">
+          <h2>مدیر همه‌چیز</h2>
+          <div class="panel-actions">
+            <button class="primary" id="life-add">+ کار جدید</button>
+            <select id="life-filter">
+              <option value="all">همه</option>
+              <option value="open">باز</option>
+              <option value="done">انجام‌شده</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="life-groups" class="groups"></div>
+      </section>
+
+      <!-- SECOND BRAIN -->
+      <section id="tab-brain" class="panel">
+        <div class="panel-head">
+          <h2>مغز دوم</h2>
+          <div class="panel-actions">
+            <button class="primary" id="brain-add">+ نوت جدید</button>
+            <input id="brain-search" placeholder="جستجو در نوت‌ها..." />
+          </div>
+        </div>
+
+        <div id="brain-list" class="notes"></div>
+      </section>
+    </main>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3 id="modal-title">...</h3>
+          <button id="modal-close" class="ghost">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-foot">
+          <button id="modal-cancel" class="ghost">انصراف</button>
+          <button id="modal-save" class="primary">ذخیره</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bottombar">
+      <div class="mini">
+        <span id="stats-life">0 کار باز</span>
+        <span class="dot">•</span>
+        <span id="stats-brain">0 نوت</span>
+      </div>
+      <div class="mini muted">v0.1 local-first</div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
