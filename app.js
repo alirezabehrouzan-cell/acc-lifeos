@@ -1,117 +1,187 @@
-// ACC LifeOS v0.1 — Local-first PWA
-const LS_KEY = "acc_lifeos_v01";
- 
-const state = loadState() ?? {
-  lifeGroups: [
-    { id: uid(), title: "Orbiq", color: "good", tasks: [] },
-    { id: uid(), title: "Skincare", color: "warn", tasks: [] },
-    { id: uid(), title: "Lakehead", color: "good", tasks: [] },
-    { id: uid(), title: "دارایی‌ها و بدهی‌ها", color: "bad", tasks: [] },
-    { id: uid(), title: "استرس‌ها", color: "warn", tasks: [] },
-    { id: uid(), title: "برنامه‌های Ariana", color: "good", tasks: [] },
-    { id: uid(), title: "رابطه با Parnian", color: "warn", tasks: [] },
-    { id: uid(), title: "برنامه‌ریزی سفرها", color: "good", tasks: [] },
-  ],
-  notes: []
+// -------------------- State --------------------
+const store = {
+  tasks: JSON.parse(localStorage.getItem("acc_tasks") || "[]"),
+  notes: JSON.parse(localStorage.getItem("acc_notes") || "[]")
 };
 
-const $ = (q) => document.querySelector(q);
-const $$ = (q) => Array.from(document.querySelectorAll(q));
-const now = () => new Date().toISOString();
+function save() {
+  localStorage.setItem("acc_tasks", JSON.stringify(store.tasks));
+  localStorage.setItem("acc_notes", JSON.stringify(store.notes));
+}
 
-// Tabs
-$$(".tab").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    $$(".tab").forEach(b=>b.classList.remove("active"));
+// -------------------- Elements --------------------
+const tabButtons = document.querySelectorAll(".tab-btn");
+const managerPanel = document.getElementById("tab-manager");
+const brainPanel = document.getElementById("tab-brain");
+
+const addTaskBtn = document.getElementById("addTaskBtn");
+const taskList = document.getElementById("taskList");
+const filterSelect = document.getElementById("filterSelect");
+const openCount = document.getElementById("openCount");
+
+const noteInput = document.getElementById("noteInput");
+const addNoteBtn = document.getElementById("addNoteBtn");
+const noteList = document.getElementById("noteList");
+const noteCount = document.getElementById("noteCount");
+
+const exportBtn = document.getElementById("exportBtn");
+
+// -------------------- Tabs --------------------
+tabButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    tabButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+
     const tab = btn.dataset.tab;
-    $$(".panel").forEach(p=>p.classList.remove("active"));
-    $("#tab-"+tab).classList.add("active");
+    if (tab === "manager") {
+      managerPanel.classList.add("active");
+      brainPanel.classList.remove("active");
+    } else {
+      brainPanel.classList.add("active");
+      managerPanel.classList.remove("active");
+    }
   });
 });
 
-// Render
-function render(){
-  renderLife();
-  renderBrain();
-  renderStats();
-  saveState();
-}
-
-// LIFE
-function renderLife(){
-  const wrap = $("#life-groups");
-  wrap.innerHTML = "";
-
-  const filter = $("#life-filter").value;
-  state.lifeGroups.forEach(g=>{
-    const openCount = g.tasks.filter(t=>!t.done).length;
-
-    const groupEl = document.createElement("div");
-    groupEl.className = "group";
-
-    groupEl.innerHTML = `
-      <div class="group-head">
-        <div class="group-title">
-          <span>${g.title}</span>
-          <span class="badge">${openCount} باز</span>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="ghost" data-action="add-task" data-gid="${g.id}">+ کار</button>
-          <button class="ghost" data-action="edit-group" data-gid="${g.id}">ویرایش</button>
-        </div>
-      </div>
-      <div class="tasks"></div>
-    `;
-
-    const tasksWrap = groupEl.querySelector(".tasks");
-    let tasks = g.tasks.slice().sort((a,b)=> (a.done===b.done)?0:(a.done?1:-1));
-    if(filter==="open") tasks = tasks.filter(t=>!t.done);
-    if(filter==="done") tasks = tasks.filter(t=>t.done);
-
-    if(tasks.length===0){
-      const empty = document.createElement("div");
-      empty.className="task";
-      empty.innerHTML = `<div class="task-meta">اینجا هنوز کاری نیست.</div>`;
-      tasksWrap.appendChild(empty);
-    } else {
-      tasks.forEach(t=>{
-        const taskEl = document.createElement("div");
-        taskEl.className="task";
-        taskEl.innerHTML=`
-          <div class="task-row">
-            <div class="task-title">${escapeHtml(t.title)}</div>
-            <div style="display:flex;gap:6px">
-              <button class="ghost" data-action="toggle-task" data-gid="${g.id}" data-tid="${t.id}">
-                ${t.done?"↩️ بازکن":"✅ انجام"}
-              </button>
-              <button class="ghost" data-action="edit-task" data-gid="${g.id}" data-tid="${t.id}">✏️</button>
-              <button class="ghost" data-action="del-task" data-gid="${g.id}" data-tid="${t.id}">🗑️</button>
-            </div>
-          </div>
-          <div class="task-meta">${t.due?("ددلاین: "+prettyDate(t.due)):"بدون ددلاین"} • ${prettyDate(t.createdAt)}</div>
-          <div class="task-tags">
-            ${(t.tags||[]).map(tag=>`<span class="tag">${escapeHtml(tag)}</span>`).join("")}
-          </div>
-          ${t.note?`<div class="task-meta">${escapeHtml(t.note)}</div>`:""}
-        `;
-        tasksWrap.appendChild(taskEl);
-      });
-    }
-
-    wrap.appendChild(groupEl);
+// -------------------- Tasks --------------------
+function addTask(title) {
+  store.tasks.unshift({
+    id: crypto.randomUUID(),
+    title,
+    done: false,
+    createdAt: Date.now()
   });
+  save();
+  renderTasks();
 }
 
-// Brain
-function renderBrain(){
-  const wrap = $("#brain-list");
-  wrap.innerHTML="";
-  const q = $("#brain-search").value?.trim().toLowerCase() || "";
+function toggleTask(id) {
+  const t = store.tasks.find(x => x.id === id);
+  if (!t) return;
+  t.done = !t.done;
+  save();
+  renderTasks();
+}
 
-  let notes = state.notes.slice().sort((a,b)=> b.updatedAt.localeCompare(a.updatedAt));
-  if(q){
-    notes = notes.filter(n =>
-      n.title.toLowerCase().includes(q) ||
-      n.body.toLowerCase().includes(q) ||
-      (n.tags||[]).join
+function deleteTask(id) {
+  store.tasks = store.tasks.filter(x => x.id !== id);
+  save();
+  renderTasks();
+}
+
+function renderTasks() {
+  const filter = filterSelect.value;
+  let tasks = store.tasks;
+
+  if (filter === "open") tasks = tasks.filter(t => !t.done);
+  if (filter === "done") tasks = tasks.filter(t => t.done);
+
+  taskList.innerHTML = tasks.map(t => `
+    <li class="item">
+      <div class="meta">
+        <div class="title">${t.title}</div>
+        <div class="small">${new Date(t.createdAt).toLocaleString("fa-IR")}</div>
+      </div>
+
+      <div style="display:flex; gap:6px;">
+        <button class="chip-btn" data-action="toggle" data-id="${t.id}">
+          ${t.done ? "↩️ باز" : "✅ انجام"}
+        </button>
+        <button class="chip-btn" data-action="delete" data-id="${t.id}">
+          🗑️
+        </button>
+      </div>
+    </li>
+  `).join("");
+
+  // bind actions
+  taskList.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => {
+      const id = b.dataset.id;
+      const action = b.dataset.action;
+      if (action === "toggle") toggleTask(id);
+      if (action === "delete") deleteTask(id);
+    });
+  });
+
+  const open = store.tasks.filter(t => !t.done).length;
+  openCount.textContent = `${open} کار باز`;
+}
+
+// Button: add task
+addTaskBtn.addEventListener("click", () => {
+  const title = prompt("عنوان کار جدید چی باشه؟");
+  if (!title || !title.trim()) return;
+  addTask(title.trim());
+});
+
+// Filter change
+filterSelect.addEventListener("change", renderTasks);
+
+// -------------------- Notes --------------------
+function addNote(text) {
+  store.notes.unshift({
+    id: crypto.randomUUID(),
+    text,
+    createdAt: Date.now()
+  });
+  save();
+  renderNotes();
+}
+
+function deleteNote(id) {
+  store.notes = store.notes.filter(n => n.id !== id);
+  save();
+  renderNotes();
+}
+
+function renderNotes() {
+  noteList.innerHTML = store.notes.map(n => `
+    <li class="item">
+      <div class="meta">
+        <div class="title">${n.text}</div>
+        <div class="small">${new Date(n.createdAt).toLocaleString("fa-IR")}</div>
+      </div>
+      <button class="chip-btn" data-id="${n.id}">🗑️</button>
+    </li>
+  `).join("");
+
+  noteList.querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => deleteNote(b.dataset.id));
+  });
+
+  noteCount.textContent = `${store.notes.length} نوت`;
+}
+
+addNoteBtn.addEventListener("click", () => {
+  const text = noteInput.value.trim();
+  if (!text) return;
+  addNote(text);
+  noteInput.value = "";
+});
+
+noteInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addNoteBtn.click();
+});
+
+// -------------------- Export --------------------
+exportBtn.addEventListener("click", () => {
+  const data = {
+    tasks: store.tasks,
+    notes: store.notes,
+    exportedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "acc-lifeos-export.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+});
+
+// -------------------- Init --------------------
+renderTasks();
+renderNotes();
